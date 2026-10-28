@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const { handleButton } = require("../handlers/buttonHandlers");
 const { handleSelect } = require("../handlers/selectHandlers");
 const { handleModal } = require("../handlers/modalHandlers");
@@ -25,7 +26,7 @@ module.exports = {
       console.error("[INTERACTION] Erro:", err);
       const payload = {
         content: "Ocorreu um erro ao processar essa ação.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       };
       if (interaction.replied || interaction.deferred) {
         interaction.followUp(payload).catch(() => {});

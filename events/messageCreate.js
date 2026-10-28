@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const { getPrefix } = require("../utils/getPrefix");
 const { getGuildConfig } = require("../database/getGuildConfig");
 const { waitingForPrefix, key } = require("../handlers/prefixWait");
@@ -11,7 +12,7 @@ module.exports = {
     // 1) Verifica se este usuário está no meio do fluxo "definir prefixo"
     const waitKey = key(message.guild.id, message.author.id, message.channel.id);
     if (waitingForPrefix.has(waitKey)) {
-      const { ephemeralMessage } = waitingForPrefix.get(waitKey);
+      const { interaction } = waitingForPrefix.get(waitKey);
       const novoPrefixo = message.content.trim().slice(0, 5);
 
       // Apaga a mensagem do usuário assim que ele enviar
@@ -23,9 +24,13 @@ module.exports = {
       config.prefix = novoPrefixo;
       await config.save();
 
-      await ephemeralMessage
-        .edit({ components: buildPrefixoEfemero(novoPrefixo) })
-        .catch(() => {});
+      // Atualiza a efêmera na hora com o novo prefixo
+      await interaction
+        .editReply({
+          components: buildPrefixoEfemero(novoPrefixo),
+          flags: MessageFlags.IsComponentsV2,
+        })
+        .catch((err) => console.error("[PREFIXO] Erro ao atualizar efêmera:", err.message));
 
       waitingForPrefix.delete(waitKey);
       return;
