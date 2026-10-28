@@ -8,7 +8,7 @@ const {
   ChannelType,
   ActionRowBuilder,
 } = require("discord.js");
-const { buildBackButton } = require("./backButton");
+const { addBackButton } = require("./backButton");
 
 // Painel inicial (antes de clicar em "Configurar")
 function buildPortariaIntro() {
@@ -29,8 +29,8 @@ function buildPortariaIntro() {
       )
   );
 
-  const backRow = buildBackButton("back_comunidade");
-  return [section, backRow];
+  addBackButton(section, "back_comunidade");
+  return [section];
 }
 
 // Painel completo de configuração da portaria
@@ -82,10 +82,8 @@ function buildPortariaConfig(config) {
           "-# Defina a mensagem de entradas ou saídas de membros."
         ),
         new TextDisplayBuilder().setContent(
-          `-# Boas-vindas: \`${config.welcomeMessage ? "Definida" : "Não definida"}\``
-        ),
-        new TextDisplayBuilder().setContent(
-          `-# Saídas: \`${config.leaveMessage ? "Definida" : "Não definida"}\``
+          `-# Boas-vindas: \`${config.welcomeMessage ? "Definida" : "Não definida"}\`\n` +
+            `-# Saídas: \`${config.leaveMessage ? "Definida" : "Não definida"}\``
         )
       )
       .setButtonAccessory(
@@ -96,9 +94,9 @@ function buildPortariaConfig(config) {
       )
   );
 
-  const backRow = buildBackButton("back_comunidade");
+  addBackButton(mensagemSection, "back_comunidade");
 
-  return [header, welcomeContainer, leaveContainer, mensagemSection, backRow];
+  return [header, welcomeContainer, leaveContainer, mensagemSection];
 }
 
 module.exports = { buildPortariaIntro, buildPortariaConfig };

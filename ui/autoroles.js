@@ -4,7 +4,7 @@ const {
   RoleSelectMenuBuilder,
   ActionRowBuilder,
 } = require("discord.js");
-const { buildBackButton } = require("./backButton");
+const { addBackButton } = require("./backButton");
 
 function buildAutoRolesPanel(config) {
   const header = new ContainerBuilder().addTextDisplayComponents(
@@ -32,9 +32,9 @@ function buildAutoRolesPanel(config) {
     new ActionRowBuilder().addComponents(roleSelect)
   );
 
-  const backRow = buildBackButton("back_comunidade");
+  addBackButton(rolesContainer, "back_comunidade");
 
-  return [header, rolesContainer, backRow];
+  return [header, rolesContainer];
 }
 
 module.exports = { buildAutoRolesPanel };

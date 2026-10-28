@@ -5,7 +5,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const { buildBackButton } = require("./backButton");
+const { addBackButton } = require("./backButton");
 
 function buildAparenciaPanel() {
   const header = new ContainerBuilder().addTextDisplayComponents(
@@ -77,9 +77,9 @@ function buildAparenciaPanel() {
       )
   );
 
-  const backRow = buildBackButton("back_main");
+  addBackButton(prefixoSection, "back_main");
 
-  return [header, nomeSection, avatarSection, bannerSection, prefixoSection, backRow];
+  return [header, nomeSection, avatarSection, bannerSection, prefixoSection];
 }
 
 function buildPrefixoEfemero(prefix) {

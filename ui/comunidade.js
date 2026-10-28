@@ -4,7 +4,7 @@ const {
   StringSelectMenuBuilder,
   ActionRowBuilder,
 } = require("discord.js");
-const { buildBackButton } = require("./backButton");
+const { addBackButton } = require("./backButton");
 
 function buildComunidadePanel() {
   const header = new ContainerBuilder().addTextDisplayComponents(
@@ -29,9 +29,9 @@ function buildComunidadePanel() {
   const selectRow = new ActionRowBuilder().addComponents(select);
   selectContainer.addActionRowComponents(selectRow);
 
-  const backRow = buildBackButton("back_main");
+  addBackButton(selectContainer, "back_main");
 
-  return [header, selectContainer, backRow];
+  return [header, selectContainer];
 }
 
 module.exports = { buildComunidadePanel };

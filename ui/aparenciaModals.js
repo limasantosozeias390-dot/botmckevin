@@ -3,6 +3,8 @@ const {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  LabelBuilder,
+  FileUploadBuilder,
 } = require("discord.js");
 
 function buildNomeModal() {
@@ -19,37 +21,40 @@ function buildNomeModal() {
   return modal;
 }
 
-// OBS: upload de arquivo direto em modal é um recurso muito recente da API do
-// Discord (componente "File Upload" em modais) e ainda tem suporte limitado
-// nas libs. Aqui deixamos o campo de link, que funciona de forma garantida.
-// Se quiser o upload por arquivo, será necessário usar a API bruta com o
-// componente de tipo File Upload (type 19) assim que seu discord.js suportar.
-function buildAvatarModal() {
-  const modal = new ModalBuilder().setCustomId("modal_avatar").setTitle("Avatar do bot");
+function buildUploadModal({ customId, title, inputId, label }) {
+  const modal = new ModalBuilder().setCustomId(customId).setTitle(title);
 
-  const linkInput = new TextInputBuilder()
-    .setCustomId("avatar_link")
-    .setLabel("Link da imagem (URL)")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setPlaceholder("https://exemplo.com/imagem.png");
+  const upload = new FileUploadBuilder()
+    .setCustomId(inputId)
+    .setMinValues(1)
+    .setMaxValues(1)
+    .setRequired(true);
 
-  modal.addComponents(new ActionRowBuilder().addComponents(linkInput));
+  const fileLabel = new LabelBuilder()
+    .setLabel(label)
+    .setDescription("Toque aqui e escolha uma imagem da sua galeria.")
+    .setFileUploadComponent(upload);
+
+  modal.addLabelComponents(fileLabel);
   return modal;
 }
 
+function buildAvatarModal() {
+  return buildUploadModal({
+    customId: "modal_avatar",
+    title: "Avatar do bot",
+    inputId: "avatar_file",
+    label: "Imagem do avatar",
+  });
+}
+
 function buildBannerModal() {
-  const modal = new ModalBuilder().setCustomId("modal_banner").setTitle("Banner do bot");
-
-  const linkInput = new TextInputBuilder()
-    .setCustomId("banner_link")
-    .setLabel("Link da imagem (URL)")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setPlaceholder("https://exemplo.com/banner.png");
-
-  modal.addComponents(new ActionRowBuilder().addComponents(linkInput));
-  return modal;
+  return buildUploadModal({
+    customId: "modal_banner",
+    title: "Banner do bot",
+    inputId: "banner_file",
+    label: "Imagem do banner",
+  });
 }
 
 module.exports = { buildNomeModal, buildAvatarModal, buildBannerModal };

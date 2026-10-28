@@ -1,4 +1,9 @@
-const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const {
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  SeparatorBuilder,
+} = require("discord.js");
 
 function buildBackButton(customId) {
   const button = new ButtonBuilder()
@@ -9,4 +14,12 @@ function buildBackButton(customId) {
   return new ActionRowBuilder().addComponents(button);
 }
 
-module.exports = { buildBackButton };
+// Adiciona o botão "Voltar" DENTRO do container (com um separador acima).
+// Chame depois de adicionar os demais componentes do container.
+function addBackButton(container, customId) {
+  container.addSeparatorComponents(new SeparatorBuilder());
+  container.addActionRowComponents(buildBackButton(customId));
+  return container;
+}
+
+module.exports = { buildBackButton, addBackButton };

@@ -5,7 +5,7 @@ const {
   ChannelType,
   ActionRowBuilder,
 } = require("discord.js");
-const { buildBackButton } = require("./backButton");
+const { addBackButton } = require("./backButton");
 
 function buildLogsPanel(config) {
   const header = new ContainerBuilder().addTextDisplayComponents(
@@ -33,9 +33,9 @@ function buildLogsPanel(config) {
     new ActionRowBuilder().addComponents(select)
   );
 
-  const backRow = buildBackButton("back_comunidade");
+  addBackButton(canalContainer, "back_comunidade");
 
-  return [header, canalContainer, backRow];
+  return [header, canalContainer];
 }
 
 module.exports = { buildLogsPanel };

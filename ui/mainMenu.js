@@ -1,7 +1,6 @@
 const {
   ContainerBuilder,
   TextDisplayBuilder,
-  SeparatorBuilder,
   StringSelectMenuBuilder,
   ActionRowBuilder,
 } = require("discord.js");
@@ -11,8 +10,7 @@ function buildMainMenu() {
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent("### Menu de configurações do bot"),
       new TextDisplayBuilder().setContent("-# Selecione abaixo o que você deseja configurar")
-    )
-    .addSeparatorComponents(new SeparatorBuilder());
+    );
 
   const select = new StringSelectMenuBuilder()
     .setCustomId("main_menu")
