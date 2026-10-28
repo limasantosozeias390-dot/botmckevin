@@ -13,7 +13,10 @@ async function handleSelect(interaction) {
     case "main_menu": {
       const value = values[0];
       if (value === "aparencia") {
-        return interaction.update({ components: buildAparenciaPanel() });
+        return interaction.reply({
+          components: buildAparenciaPanel(),
+          flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+        });
       }
       if (value === "comunidade") {
         return interaction.reply({

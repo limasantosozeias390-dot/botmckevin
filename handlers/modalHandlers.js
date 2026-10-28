@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const BotConfig = require("../database/models/BotConfig");
 const { getGuildConfig } = require("../database/getGuildConfig");
 const { buildPortariaConfig } = require("../ui/portaria");
@@ -6,6 +7,15 @@ async function getBotConfig() {
   let config = await BotConfig.findById("global");
   if (!config) config = await BotConfig.create({});
   return config;
+}
+
+// Pega a imagem enviada pelo componente File Upload do modal
+function getImage(interaction, inputId) {
+  const files = interaction.fields.getUploadedFiles(inputId);
+  const file = files?.first();
+  if (!file) return null;
+  if (file.contentType && !file.contentType.startsWith("image/")) return null;
+  return file;
 }
 
 async function handleModal(interaction) {
@@ -21,55 +31,54 @@ async function handleModal(interaction) {
         await botConfig.save();
         return interaction.reply({
           content: `Nome do bot atualizado para **${nome}**.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       } catch (err) {
         console.error("[MODAL NOME] Erro:", err);
         return interaction.reply({
           content:
             "Não foi possível alterar o nome agora (o Discord limita trocas de nome com frequência).",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }
 
     case "modal_avatar": {
-      const link = interaction.fields.getTextInputValue("avatar_link");
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const file = getImage(interaction, "avatar_file");
+      if (!file) {
+        return interaction.editReply({ content: "Envie um arquivo de imagem válido (png, jpg, gif ou webp)." });
+      }
       try {
-        await interaction.client.user.setAvatar(link);
+        await interaction.client.user.setAvatar(file.url);
         const botConfig = await getBotConfig();
-        botConfig.avatar = link;
+        botConfig.avatar = file.url;
         await botConfig.save();
-        return interaction.reply({
-          content: "Avatar do bot atualizado com sucesso.",
-          ephemeral: true,
-        });
+        return interaction.editReply({ content: "Avatar do bot atualizado com sucesso." });
       } catch (err) {
         console.error("[MODAL AVATAR] Erro:", err);
-        return interaction.reply({
-          content: "Não foi possível definir esse link como avatar. Verifique se é uma imagem válida.",
-          ephemeral: true,
+        return interaction.editReply({
+          content: "Não foi possível definir essa imagem como avatar (o Discord limita trocas frequentes).",
         });
       }
     }
 
     case "modal_banner": {
-      const link = interaction.fields.getTextInputValue("banner_link");
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const file = getImage(interaction, "banner_file");
+      if (!file) {
+        return interaction.editReply({ content: "Envie um arquivo de imagem válido (png, jpg, gif ou webp)." });
+      }
       try {
-        await interaction.client.user.setBanner(link);
+        await interaction.client.user.setBanner(file.url);
         const botConfig = await getBotConfig();
-        botConfig.banner = link;
+        botConfig.banner = file.url;
         await botConfig.save();
-        return interaction.reply({
-          content: "Banner do bot atualizado com sucesso.",
-          ephemeral: true,
-        });
+        return interaction.editReply({ content: "Banner do bot atualizado com sucesso." });
       } catch (err) {
         console.error("[MODAL BANNER] Erro:", err);
-        return interaction.reply({
-          content:
-            "Não foi possível definir esse link como banner (lembre-se: banner exige Nitro na conta do bot).",
-          ephemeral: true,
+        return interaction.editReply({
+          content: "Não foi possível definir essa imagem como banner. Tente outra imagem.",
         });
       }
     }

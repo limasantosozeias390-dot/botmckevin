@@ -39,10 +39,10 @@ async function handleButton(interaction) {
         components: buildPrefixoEfemero(config.prefix),
         flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
       });
-      const ephemeralMessage = await interaction.fetchReply();
+      // Guardamos a interaction: é ela que permite editar a mensagem efêmera depois
       waitingForPrefix.set(
         key(interaction.guild.id, interaction.user.id, interaction.channel.id),
-        { ephemeralMessage }
+        { interaction }
       );
       return;
     }

@@ -1,4 +1,4 @@
-// Map<"guildId:userId:channelId", { ephemeralMessage }>
+// Map<"guildId:userId:channelId", { interaction }>
 const waitingForPrefix = new Map();
 
 function key(guildId, userId, channelId) {
