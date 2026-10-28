@@ -1,0 +1,39 @@
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  StringSelectMenuBuilder,
+  ActionRowBuilder,
+} = require("discord.js");
+
+function buildMainMenu() {
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent("### Menu de configurações do bot"),
+      new TextDisplayBuilder().setContent("-# Selecione abaixo o que você deseja configurar")
+    )
+    .addSeparatorComponents(new SeparatorBuilder());
+
+  const select = new StringSelectMenuBuilder()
+    .setCustomId("main_menu")
+    .setPlaceholder("Selecione uma opção")
+    .addOptions(
+      {
+        label: "Aparência e prefixo",
+        description: "Configurações de aparência do bot.",
+        value: "aparencia",
+      },
+      {
+        label: "Comunidade e interação",
+        description: "Configurações da comunidade e interações.",
+        value: "comunidade",
+      }
+    );
+
+  const row = new ActionRowBuilder().addComponents(select);
+  container.addActionRowComponents(row);
+
+  return [container];
+}
+
+module.exports = { buildMainMenu };
