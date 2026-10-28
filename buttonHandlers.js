@@ -1,0 +1,65 @@
+const { MessageFlags } = require("discord.js");
+const { getGuildConfig } = require("../database/getGuildConfig");
+const { buildMainMenu } = require("../ui/mainMenu");
+const { buildAparenciaPanel, buildPrefixoEfemero } = require("../ui/aparencia");
+const { buildComunidadePanel } = require("../ui/comunidade");
+const { buildPortariaIntro, buildPortariaConfig } = require("../ui/portaria");
+const {
+  buildNomeModal,
+  buildAvatarModal,
+  buildBannerModal,
+} = require("../ui/aparenciaModals");
+const { buildMensagensModal } = require("../ui/portariaModals");
+const { waitingForPrefix, key } = require("./prefixWait");
+
+async function handleButton(interaction) {
+  const { customId } = interaction;
+
+  switch (customId) {
+    case "back_main": {
+      return interaction.update({ components: buildMainMenu() });
+    }
+
+    case "back_comunidade": {
+      return interaction.update({ components: buildComunidadePanel() });
+    }
+
+    case "btn_nome":
+      return interaction.showModal(buildNomeModal());
+
+    case "btn_avatar":
+      return interaction.showModal(buildAvatarModal());
+
+    case "btn_banner":
+      return interaction.showModal(buildBannerModal());
+
+    case "btn_prefixo": {
+      const config = await getGuildConfig(interaction.guild.id);
+      await interaction.reply({
+        components: buildPrefixoEfemero(config.prefix),
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      });
+      const ephemeralMessage = await interaction.fetchReply();
+      waitingForPrefix.set(
+        key(interaction.guild.id, interaction.user.id, interaction.channel.id),
+        { ephemeralMessage }
+      );
+      return;
+    }
+
+    case "btn_portaria_abrir": {
+      const config = await getGuildConfig(interaction.guild.id);
+      return interaction.update({ components: buildPortariaConfig(config) });
+    }
+
+    case "btn_portaria_mensagens": {
+      const config = await getGuildConfig(interaction.guild.id);
+      return interaction.showModal(buildMensagensModal(config));
+    }
+
+    default:
+      return;
+  }
+}
+
+module.exports = { handleButton };
