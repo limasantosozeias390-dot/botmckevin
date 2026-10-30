@@ -3,7 +3,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
 const { connectDatabase } = require("./database/connect");
-const { registerLogEvents } = require("./logger/logEvents");
 const { startKeepAliveServer } = require("./keepAlive");
 
 const client = new Client({
@@ -11,8 +10,6 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildModeration, // bans
-    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.GuildMember],
@@ -38,7 +35,6 @@ for (const file of fs.readdirSync(eventsPath).filter((f) => f.endsWith(".js"))) 
   }
 }
 
-registerLogEvents(client);
 startKeepAliveServer(client);
 
 (async () => {
