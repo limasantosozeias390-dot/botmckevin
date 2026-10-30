@@ -56,7 +56,8 @@ function buildRegrasEfemera() {
         new TextDisplayBuilder().setContent(
           [
             "1. **Respeito a todos**",
-            "Não toleramos insultos, discriminação, ameaças ou provocações mais pesadas.",
+            "Xingue à vontade, mas respeite os limites e pare caso alguém se sinta ofendido.
+            "",
             "",
             "2. **Sem spam ou propaganda**",
             "Evite mensagens repetidas, correntes, links duvidosos e divulgações sem o consenso da equipe.",
