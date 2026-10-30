@@ -46,6 +46,9 @@ module.exports = {
     const command = message.client.commands.get(commandName);
     if (!command) return;
 
+    // Apaga a mensagem do comando assim que ele é reconhecido
+    message.delete().catch(() => {});
+
     try {
       await command.execute(message, args);
     } catch (err) {
