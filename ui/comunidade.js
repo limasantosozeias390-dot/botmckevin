@@ -22,8 +22,7 @@ function buildComunidadePanel() {
     .setPlaceholder("Selecione uma opção")
     .addOptions(
       { label: "Portaria", description: "Configure as mensagens de boas-vindas no servidor.", value: "portaria" },
-      { label: "Auto-roles", description: "Configure os cargos automáticos.", value: "autoroles" },
-      { label: "Logs do servidor", description: "Configurações de logs e registros do servidor.", value: "logs" }
+      { label: "Auto-roles", description: "Configure os cargos automáticos.", value: "autoroles" }
     );
 
   const selectRow = new ActionRowBuilder().addComponents(select);
