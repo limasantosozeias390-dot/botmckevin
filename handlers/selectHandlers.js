@@ -4,7 +4,7 @@ const { buildAparenciaPanel } = require("../ui/aparencia");
 const { buildComunidadePanel } = require("../ui/comunidade");
 const { buildPortariaIntro, buildPortariaConfig } = require("../ui/portaria");
 const { buildAutoRolesPanel } = require("../ui/autoroles");
-const { buildLogsPanel } = require("../ui/logs");
+const { handleTicketSelect } = require("./ticketHandlers");
 
 async function handleSelect(interaction) {
   const { customId, values } = interaction;
@@ -36,10 +36,6 @@ async function handleSelect(interaction) {
         const config = await getGuildConfig(interaction.guild.id);
         return interaction.update({ components: buildAutoRolesPanel(config) });
       }
-      if (value === "logs") {
-        const config = await getGuildConfig(interaction.guild.id);
-        return interaction.update({ components: buildLogsPanel(config) });
-      }
       return;
     }
 
@@ -64,12 +60,8 @@ async function handleSelect(interaction) {
       return interaction.update({ components: buildAutoRolesPanel(config) });
     }
 
-    case "logs_channel": {
-      const config = await getGuildConfig(interaction.guild.id);
-      config.logsChannel = values[0];
-      await config.save();
-      return interaction.update({ components: buildLogsPanel(config) });
-    }
+    case "ticket_select":
+      return handleTicketSelect(interaction);
 
     default:
       return;

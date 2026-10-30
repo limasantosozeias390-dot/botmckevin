@@ -11,9 +11,14 @@ const {
 } = require("../ui/aparenciaModals");
 const { buildMensagensModal } = require("../ui/portariaModals");
 const { waitingForPrefix, key } = require("./prefixWait");
+const { handleTicketButton } = require("./ticketHandlers");
 
 async function handleButton(interaction) {
   const { customId } = interaction;
+
+  if (customId.startsWith("ticket_")) {
+    return handleTicketButton(interaction);
+  }
 
   switch (customId) {
     case "back_main": {
