@@ -38,11 +38,12 @@ async function handleTicketSelect(interaction) {
 
   try {
     // Número do ticket (contador por servidor)
+    // strict:false + lean garantem que o contador funcione mesmo se o schema estiver desatualizado
     const config = await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guild.id },
       { $inc: { ticketCounter: 1 } },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    );
+      { new: true, upsert: true, setDefaultsOnInsert: true, strict: false }
+    ).lean();
 
     const thread = await interaction.channel.threads.create({
       name: `📌・${user.username}・N°${config.ticketCounter}`.slice(0, 100),
