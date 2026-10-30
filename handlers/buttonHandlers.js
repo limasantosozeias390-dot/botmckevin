@@ -12,12 +12,17 @@ const {
 const { buildMensagensModal } = require("../ui/portariaModals");
 const { waitingForPrefix, key } = require("./prefixWait");
 const { handleTicketButton } = require("./ticketHandlers");
+const { handleRegrasButton } = require("./regrasHandlers");
 
 async function handleButton(interaction) {
   const { customId } = interaction;
 
   if (customId.startsWith("ticket_")) {
     return handleTicketButton(interaction);
+  }
+
+  if (customId.startsWith("regras_")) {
+    return handleRegrasButton(interaction);
   }
 
   switch (customId) {
