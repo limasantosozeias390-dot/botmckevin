@@ -8,13 +8,14 @@ const {
   RoleSelectMenuBuilder,
   ChannelSelectMenuBuilder,
   StringSelectMenuBuilder,
+  SectionBuilder,
   ChannelType,
   TextInputStyle,
 } = require("discord.js");
 const { addBackButton } = require("./backButton");
 const { textLabel, modal } = require("./modalHelpers");
 const { vagalumeAvailable } = require("../utils/spotify/lyrics");
-const { DEFAULT_LABELS, DEFAULT_INFO_LABELS } = require("../utils/spotify/store");
+const { DEFAULT_LABELS, DEFAULT_INFO_LABELS, INFO_OFFSET_STEP, INFO_OFFSET_MAX } = require("../utils/spotify/store");
 const { THEMES, visualCustomCount } = require("../utils/spotify/themes");
 
 // Painéis do menu: Comunidade e interação → Comando spotify
@@ -216,6 +217,7 @@ function buildSpotifyLook(cfg) {
         btn("sptcfg_page:colors", "Cores"),
         btn("sptcfg_page:texts", "Textos e ícones"),
         btn("sptcfg_page:shape", "Formato"),
+        btn("sptcfg_page:position", "Posição"),
         btn("sptcfg_preview", "Pré-visualizar", ButtonStyle.Primary)
       )
     );
@@ -290,6 +292,55 @@ function buildSpotifyShape(cfg) {
     )
     .addActionRowComponents(
       row(btn("sptcfg_preview", "Pré-visualizar", ButtonStyle.Primary), btn("sptcfg_resetshape", "Restaurar formato", ButtonStyle.Danger))
+    );
+  addBackButton(container, "sptcfg_page:look");
+
+  return [header, container];
+}
+
+// ---------- Posição ----------
+
+// Emojis dos botões de posição (cima e baixo)
+const UP_EMOJI = { id: "1571236307336695930", name: "up" };
+const DOWN_EMOJI = { id: "1571236292392648874", name: "down" };
+
+function buildSpotifyPosition(cfg) {
+  const offset = cfg.infoOffset ?? 0;
+  const header = new ContainerBuilder().addTextDisplayComponents(
+    text("### Posição das informações"),
+    text("-# Sobe ou desce o título, os artistas, a barra de progresso e os tempos no card. A faixa \"Ouvindo agora\" não muda de lugar."),
+    text(
+      `-# Posição atual: ${offset ? `**${offset}px** acima do padrão (máximo: ${INFO_OFFSET_MAX}px)` : "**padrão** (embaixo)"}`
+    )
+  );
+
+  const upButton = new ButtonBuilder()
+    .setCustomId("sptcfg_pos:up")
+    .setEmoji(UP_EMOJI)
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(offset >= INFO_OFFSET_MAX);
+  const downButton = new ButtonBuilder()
+    .setCustomId("sptcfg_pos:down")
+    .setEmoji(DOWN_EMOJI)
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(offset <= 0);
+
+  // Texto à esquerda e botão à direita, um separador entre as duas linhas
+  const container = new ContainerBuilder()
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(text("**Subir informações**"), text(`-# Sobe ${INFO_OFFSET_STEP}px a cada clique.`))
+        .setButtonAccessory(upButton)
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(text("**Descer informações**"), text(`-# Desce ${INFO_OFFSET_STEP}px a cada clique, até a posição padrão.`))
+        .setButtonAccessory(downButton)
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addActionRowComponents(
+      row(btn("sptcfg_preview", "Pré-visualizar", ButtonStyle.Primary), btn("sptcfg_resetpos", "Restaurar posição", ButtonStyle.Danger))
     );
   addBackButton(container, "sptcfg_page:look");
 
@@ -617,6 +668,7 @@ module.exports = {
   buildSpotifyLook,
   buildSpotifyColors,
   buildSpotifyShape,
+  buildSpotifyPosition,
   buildSpotifyTexts,
   buildSpotifyButtons,
   buildSpotifyBehavior,

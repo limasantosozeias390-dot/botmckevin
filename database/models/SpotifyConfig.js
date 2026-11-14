@@ -41,6 +41,7 @@ const spotifyConfigSchema = new Schema({
   overlay: { type: Number, default: null }, // escurecimento geral em % (null = automático pelo vidro)
   showTimes: { type: Boolean, default: true },
   showKnob: { type: Boolean, default: true },
+  infoOffset: { type: Number, default: 0 }, // px que título, artistas, barra e tempos sobem (aba "Posição")
 
   // Textos e ícones do card ("" = padrão, "-" = esconder)
   pillText: { type: String, default: "" },

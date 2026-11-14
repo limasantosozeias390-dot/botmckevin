@@ -2,6 +2,10 @@ const { PermissionFlagsBits } = require("discord.js");
 const SpotifyConfig = require("../../database/models/SpotifyConfig");
 
 const TTL = 60_000;
+
+// Aba "Posição": quanto as informações de baixo do card sobem (px), de quanto em quanto e até onde
+const INFO_OFFSET_STEP = 10;
+const INFO_OFFSET_MAX = 200;
 const cache = new Map(); // guildId -> { cfg, at }
 
 const DEFAULT_LABELS = {
@@ -102,6 +106,7 @@ function toConfig(doc) {
     overlay: doc?.overlay == null ? null : int(doc.overlay, 22, 0, 90),
     showTimes: doc?.showTimes ?? true,
     showKnob: doc?.showKnob ?? true,
+    infoOffset: int(doc?.infoOffset, 0, 0, INFO_OFFSET_MAX),
 
     pillText: short(doc?.pillText, 20),
     pillIcon: normalizeIcon(doc?.pillIcon) ?? "",
@@ -197,6 +202,8 @@ const startCooldown = (guildId, userId) => {
 };
 
 module.exports = {
+  INFO_OFFSET_STEP,
+  INFO_OFFSET_MAX,
   DEFAULT_LABELS,
   DEFAULT_INFO_LABELS,
   normalizeHex,

@@ -4,6 +4,8 @@ const {
   getSpotifyConfig,
   updateSpotifyConfig,
   resetSpotifyConfig,
+  INFO_OFFSET_STEP,
+  INFO_OFFSET_MAX,
   normalizeHex,
   normalizeIcon,
   normalizeEmoji,
@@ -17,6 +19,7 @@ const {
   buildSpotifyLook,
   buildSpotifyColors,
   buildSpotifyShape,
+  buildSpotifyPosition,
   buildSpotifyTexts,
   buildSpotifyButtons,
   buildSpotifyBehavior,
@@ -58,6 +61,7 @@ const PAGES = {
   look: (guild, cfg) => buildSpotifyLook(cfg),
   colors: (guild, cfg) => buildSpotifyColors(cfg),
   shape: (guild, cfg) => buildSpotifyShape(cfg),
+  position: (guild, cfg) => buildSpotifyPosition(cfg),
   texts: (guild, cfg) => buildSpotifyTexts(cfg),
   buttons: (guild, cfg) => buildSpotifyButtons(cfg),
   behavior: (guild, cfg) => buildSpotifyBehavior(cfg),
@@ -174,6 +178,17 @@ async function handleSpotifyConfigButton(interaction) {
         "shape",
         await updateSpotifyConfig(guild.id, Object.fromEntries(SHAPE_FIELDS.map((key) => [key, VISUAL_DEFAULTS[key]])))
       );
+
+    // Aba Posição: sobe/desce as informações de baixo do card
+    case "sptcfg_pos": {
+      const delta = arg === "up" ? INFO_OFFSET_STEP : arg === "down" ? -INFO_OFFSET_STEP : 0;
+      const infoOffset = Math.min(INFO_OFFSET_MAX, Math.max(0, (cfg.infoOffset ?? 0) + delta));
+      if (infoOffset === cfg.infoOffset) return show("position", cfg);
+      return show("position", await updateSpotifyConfig(guild.id, { infoOffset }));
+    }
+
+    case "sptcfg_resetpos":
+      return show("position", await updateSpotifyConfig(guild.id, { infoOffset: 0 }));
 
     case "sptcfg_resettexts":
       return show(

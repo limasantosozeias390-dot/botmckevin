@@ -246,7 +246,8 @@ function prefetchCardImages({ coverUrl, avatarUrl } = {}, o = {}) {
 // o (configuração do painel do n!menu, tudo opcional):
 //   cores (#rrggbb): barColor "green" | "cover" | "custom" + barHex, trackHex, knobHex, titleHex, artistHex, timeHex,
 //                    pillTextHex, footerTextHex, bgHex/bgHex2 (fundo no lugar da capa), shadeHex, glassHex
-//   formato: glass "dark" | "normal" | "light", radius, blur, barHeight, overlay (%), showTimes, showKnob
+//   formato: glass "dark" | "normal" | "light", radius, blur, barHeight, overlay (%), showTimes, showKnob,
+//            infoOffset (px que título, artistas, barra e tempos sobem; a faixa "Ouvindo agora" fica no lugar)
 //   textos e ícones: showPill, pillText, pillIcon, showNowPlaying, footerText, footerName, showAvatar
 async function renderSpotifyCard(dados, o = {}) {
   const { title, artists, coverUrl, positionMs, durationMs, userName, displayName, avatarUrl } = dados;
@@ -261,8 +262,10 @@ async function renderSpotifyCard(dados, o = {}) {
   const overlay = o.overlay == null ? preset.base : Math.min(0.9, Math.max(0, o.overlay / 100));
   const shadeRgb = hexToRgb(o.shadeHex) ?? [0, 0, 0];
   const glassRgb = hexToRgb(o.glassHex) ?? [0, 0, 0];
+  // Aba "Posição": título, artistas, barra e tempos sobem esse tanto (0 = posição de sempre)
+  const up = Math.min(200, Math.max(0, Math.round(Number(o.infoOffset) || 0)));
   // Sem a faixa "Ouvindo agora", o texto e a barra descem para ocupar o espaço dela
-  const dy = showNowPlaying ? 0 : 34;
+  const dy = (showNowPlaying ? 0 : 34) - up;
 
   // Textos: vazio = padrão, "-" = esconder
   const pillText = o.pillText === "-" ? "" : o.pillText || "Spotify";
@@ -322,12 +325,15 @@ async function renderSpotifyCard(dados, o = {}) {
   // Escurecimento geral + degradê forte embaixo (legibilidade do texto)
   ctx.fillStyle = rgba(shadeRgb, overlay);
   ctx.fillRect(0, 0, W, H);
-  const shade = ctx.createLinearGradient(0, 200, 0, H);
+  // (com as informações mais acima, o degradê começa mais cedo para o texto continuar legível)
+  const shadeTop = 200 - up;
+  const shadeEnd = H - up / 2;
+  const shade = ctx.createLinearGradient(0, shadeTop, 0, shadeEnd);
   shade.addColorStop(0, rgba(shadeRgb, 0));
   shade.addColorStop(0.55, rgba(shadeRgb, 0.62));
   shade.addColorStop(1, rgba(shadeRgb, 0.9));
   ctx.fillStyle = shade;
-  ctx.fillRect(0, 200, W, H - 200);
+  ctx.fillRect(0, shadeTop, W, H - shadeTop);
 
   // Pílula de vidro (ícone + texto; a largura acompanha o texto)
   if (showPill && (pillText || icon || iconMode === "default")) {
