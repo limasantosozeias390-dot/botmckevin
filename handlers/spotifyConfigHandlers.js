@@ -190,7 +190,7 @@ async function handleSpotifyConfigButton(interaction) {
     }
 
     // Aba Posição: pílula do Spotify para a direita / esquerda
-    case "sptcfg_pill": {
+    case "sptcfg_pillpos": {
       const max = pillMaxOffset(cfg);
       const current = Math.min(cfg.pillOffset ?? 0, max);
       const pillOffset =

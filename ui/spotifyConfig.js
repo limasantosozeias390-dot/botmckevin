@@ -348,7 +348,7 @@ function buildSpotifyPosition(cfg) {
       line(
         "**Pílula para a direita**",
         `-# Move ${PILL_OFFSET_STEP}px a cada clique, até a margem direita.`,
-        posButton("sptcfg_pill:right", RIGHT_EMOJI, pillOffset >= pillMax)
+        posButton("sptcfg_pillpos:right", RIGHT_EMOJI, pillOffset >= pillMax)
       )
     )
     .addSeparatorComponents(new SeparatorBuilder())
@@ -356,7 +356,7 @@ function buildSpotifyPosition(cfg) {
       line(
         "**Pílula para a esquerda**",
         `-# Move ${PILL_OFFSET_STEP}px a cada clique, até o canto esquerdo.`,
-        posButton("sptcfg_pill:left", LEFT_EMOJI, pillOffset <= 0)
+        posButton("sptcfg_pillpos:left", LEFT_EMOJI, pillOffset <= 0)
       )
     )
     .addSeparatorComponents(new SeparatorBuilder())
