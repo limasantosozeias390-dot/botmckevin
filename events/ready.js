@@ -3,6 +3,8 @@ const { DEFAULT_PREFIX } = require("../utils/getPrefix");
 const { getBotConfig, applyPresence } = require("../utils/botPresence");
 const { sweepCalls } = require("../utils/callHub");
 const { restoreCardTimers } = require("../utils/spotify/autoDelete");
+const { getSpotifyConfig } = require("../utils/spotify/store");
+const { prefetchCardImages } = require("../utils/spotify/card");
 
 // Servidor onde os slash commands são registrados (pode trocar pela variável GUILD_ID).
 const GUILD_ID = process.env.GUILD_ID || "1542321888175456357";
@@ -25,6 +27,13 @@ module.exports = {
       await restoreCardTimers(client);
     } catch (err) {
       console.error("[SPOTIFY] Erro ao retomar as exclusões automáticas:", err.message);
+    }
+
+    // n!spotify: já baixa o ícone da pílula de cada servidor (o primeiro card depois do reinício não espera por isso)
+    for (const guild of client.guilds.cache.values()) {
+      getSpotifyConfig(guild.id)
+        .then((cfg) => prefetchCardImages({}, cfg))
+        .catch(() => {});
     }
 
     // Registra os slash commands direto no servidor (aparecem na hora).

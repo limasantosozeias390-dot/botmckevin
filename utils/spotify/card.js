@@ -5,6 +5,7 @@ const { createCanvas, loadImage, GlobalFonts } = require("@napi-rs/canvas");
 
 const W = 1100;
 const H = 546;
+const BLUR_SCALE = 0.25; // o desfoque é feito em 1/4 do tamanho e esticado de volta (visual igual, bem mais rápido)
 const MARGIN = 100; // sobra em volta da cópia desfocada (evita borda transparente do desfoque; cabe blur até 40)
 const GREEN = "#1ed760";
 
@@ -48,8 +49,7 @@ try {
   console.error("[SPOTIFY] Fonte DejaVu indisponível, usando a padrão:", err.message);
 }
 
-async function loadImageFromUrl(url) {
-  if (!url) return null;
+async function fetchImage(url) {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
@@ -57,6 +57,23 @@ async function loadImageFromUrl(url) {
   } catch {
     return null;
   }
+}
+
+// Capa e avatar têm hash na URL (o conteúdo de uma URL nunca muda), então a imagem fica guardada em memória.
+// Guarda a promise: quem pedir enquanto ainda baixa (ex.: a busca antecipada do comando) aproveita o mesmo download.
+const imageCache = new Map(); // url -> Promise<Image|null>
+function loadImageFromUrl(url) {
+  if (!url) return Promise.resolve(null);
+  let promise = imageCache.get(url);
+  if (!promise) {
+    promise = fetchImage(url).then((img) => {
+      if (!img) imageCache.delete(url); // falhou: tenta de novo na próxima vez
+      return img;
+    });
+    imageCache.set(url, promise);
+    if (imageCache.size > 40) imageCache.delete(imageCache.keys().next().value);
+  }
+  return promise;
 }
 
 // "#rrggbb" -> [r, g, b] (ou null)
@@ -76,9 +93,15 @@ function roundRect(ctx, x, y, w, h, r) {
 // Corta o texto com "…" se passar da largura máxima.
 function fitText(ctx, text, maxWidth) {
   if (ctx.measureText(text).width <= maxWidth) return text;
-  let t = text;
-  while (t.length > 1 && ctx.measureText(`${t}…`).width > maxWidth) t = t.slice(0, -1);
-  return `${t.trimEnd()}…`;
+  // Busca binária: maior pedaço do começo que cabe com o "…" (mesmo resultado do corte letra por letra)
+  let lo = 1;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (ctx.measureText(`${text.slice(0, mid)}…`).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return `${text.slice(0, lo).trimEnd()}…`;
 }
 
 function formatTime(ms) {
@@ -93,7 +116,8 @@ function glass(ctx, blurred, x, y, w, h, radius, tint, dim, dimRgb = [0, 0, 0]) 
   ctx.save();
   roundRect(ctx, x, y, w, h, radius);
   ctx.clip();
-  ctx.drawImage(blurred, -MARGIN, -MARGIN);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(blurred, -MARGIN, -MARGIN, W + MARGIN * 2, H + MARGIN * 2);
   ctx.fillStyle = rgba(dimRgb, dim);
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = `rgba(255, 255, 255, ${tint})`;
@@ -202,6 +226,22 @@ function spotifyLogo(ctx, cx, cy, r) {
   }
 }
 
+// Ícone da pílula: padrão (emoji do bot) | nenhum (null) | emoji/link escolhido
+function resolveIconUrl(o = {}) {
+  if (o.pillIcon === "-") return null;
+  if (o.pillIcon) return /^\d+$/.test(o.pillIcon) ? emojiUrl(o.pillIcon) : o.pillIcon;
+  return emojiUrl(SPOTIFY_EMOJI_ID);
+}
+
+// Começa a baixar capa, avatar e ícone antes do desenho (só o que a configuração realmente usa).
+// Não espera nada: o desenho depois reaproveita os downloads em andamento ou já prontos.
+function prefetchCardImages({ coverUrl, avatarUrl } = {}, o = {}) {
+  if (!o.bgHex) loadImageFromUrl(coverUrl);
+  if ((o.showNowPlaying ?? true) && (o.showAvatar ?? true)) loadImageFromUrl(avatarUrl);
+  const iconUrl = resolveIconUrl(o);
+  if ((o.showPill ?? true) && iconUrl) loadIcon(iconUrl);
+}
+
 // dados: { title, artists, coverUrl, positionMs, durationMs, userName, displayName, avatarUrl }
 // o (configuração do painel do n!menu, tudo opcional):
 //   cores (#rrggbb): barColor "green" | "cover" | "custom" + barHex, trackHex, knobHex, titleHex, artistHex, timeHex,
@@ -231,14 +271,7 @@ async function renderSpotifyCard(dados, o = {}) {
 
   // Ícone da pílula: padrão (emoji do bot) | nenhum | emoji/link escolhido
   const iconMode = o.pillIcon === "-" ? "none" : o.pillIcon ? "custom" : "default";
-  const iconUrl =
-    iconMode === "none"
-      ? null
-      : iconMode === "custom"
-        ? /^\d+$/.test(o.pillIcon)
-          ? emojiUrl(o.pillIcon)
-          : o.pillIcon
-        : emojiUrl(SPOTIFY_EMOJI_ID);
+  const iconUrl = resolveIconUrl(o);
 
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
@@ -250,7 +283,7 @@ async function renderSpotifyCard(dados, o = {}) {
   ]);
 
   // Pinta a capa (recorte central), o fundo de cor/degradê escolhido ou o degradê escuro padrão
-  const paintBackdrop = (c, w, h) => {
+  const paintBackdrop = (c, w, h, k = 1) => {
     if (o.bgHex) {
       const g = c.createLinearGradient(0, 0, w, h);
       g.addColorStop(0, o.bgHex);
@@ -258,7 +291,7 @@ async function renderSpotifyCard(dados, o = {}) {
       c.fillStyle = g;
       c.fillRect(0, 0, w, h);
     } else if (cover) {
-      c.drawImage(cover, 0, -(w - h) / 2 - 30, w, w);
+      c.drawImage(cover, 0, -(w - h) / 2 - 30 * k, w, w);
     } else {
       const g = c.createLinearGradient(0, 0, w, h);
       g.addColorStop(0, "#1f3a2a");
@@ -268,14 +301,17 @@ async function renderSpotifyCard(dados, o = {}) {
     }
   };
 
-  // Cópia desfocada do fundo, feita uma vez só (o desfoque é a parte mais pesada do desenho)
+  // Cópia desfocada do fundo, feita uma vez só e em escala reduzida (o desfoque é a parte mais pesada do desenho;
+  // em 1/4 do tamanho custa uma fração e, de tão suave, o resultado esticado fica igual)
   const rawW = W + MARGIN * 2;
   const rawH = H + MARGIN * 2;
-  const raw = createCanvas(rawW, rawH);
-  paintBackdrop(raw.getContext("2d"), rawW, rawH);
-  const blurred = createCanvas(rawW, rawH);
+  const smallW = Math.round(rawW * BLUR_SCALE);
+  const smallH = Math.round(rawH * BLUR_SCALE);
+  const raw = createCanvas(smallW, smallH);
+  paintBackdrop(raw.getContext("2d"), smallW, smallH, smallW / rawW);
+  const blurred = createCanvas(smallW, smallH);
   const bctx = blurred.getContext("2d");
-  bctx.filter = `blur(${blurPx}px)`;
+  bctx.filter = `blur(${blurPx * BLUR_SCALE}px)`;
   bctx.drawImage(raw, 0, 0);
 
   // Cantos arredondados do card inteiro
@@ -401,4 +437,4 @@ async function renderSpotifyCard(dados, o = {}) {
   return canvas.encode("png"); // assíncrono: não trava o bot enquanto gera o PNG
 }
 
-module.exports = { renderSpotifyCard, formatTime };
+module.exports = { renderSpotifyCard, prefetchCardImages, formatTime };

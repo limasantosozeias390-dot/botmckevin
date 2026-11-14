@@ -1,7 +1,7 @@
 const { MessageFlags } = require("discord.js");
 const { getSpotify } = require("../utils/spotify/activity");
 const { buildNotice } = require("../ui/spotify");
-const { buildCardPayload, rememberCard } = require("../handlers/spotifyHandlers");
+const { buildCardPayload, rememberCard, prefetchCard } = require("../handlers/spotifyHandlers");
 const {
   getSpotifyConfig,
   canUseSpotify,
@@ -37,6 +37,11 @@ module.exports = {
     const targetId = message.mentions.users.first()?.id ?? args[0]?.match(/\d{17,20}/)?.[0] ?? author.id;
     const self = targetId === author.id;
 
+    // Já começa a baixar capa e avatar (só se a pessoa estiver no cache) enquanto o resto é conferido
+    const cachedMember = guild.members.cache.get(targetId);
+    const earlyTrack = cachedMember ? getSpotify(guild, targetId) : null;
+    if (earlyTrack) prefetchCard(earlyTrack, cachedMember, cfg);
+
     const verdict = canUseSpotify(cfg, message.member, channel, { self });
     if (!verdict.ok) {
       const reasons = {
@@ -56,7 +61,7 @@ module.exports = {
       }
     }
 
-    const member = await guild.members.fetch(targetId).catch(() => null);
+    const member = cachedMember ?? (await guild.members.fetch(targetId).catch(() => null));
     if (!member) return aviso("Não encontrei essa pessoa neste servidor.");
 
     const track = getSpotify(guild, targetId);

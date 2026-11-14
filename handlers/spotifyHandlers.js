@@ -1,6 +1,6 @@
 const { AttachmentBuilder, MessageFlags } = require("discord.js");
 const { getSpotify, getPosition } = require("../utils/spotify/activity");
-const { renderSpotifyCard } = require("../utils/spotify/card");
+const { renderSpotifyCard, prefetchCardImages } = require("../utils/spotify/card");
 const { fetchLyrics, splitLyrics } = require("../utils/spotify/lyrics");
 const { buildSpotifyCard, buildInfoPanel, buildLyricsPart, buildNotice } = require("../ui/spotify");
 const { getSpotifyConfig } = require("../utils/spotify/store");
@@ -18,21 +18,32 @@ function rememberCard(messageId, track) {
   if (cards.size > 300) cards.delete(cards.keys().next().value);
 }
 
+// Dados que o desenho do card usa (o mesmo para o download antecipado e para o desenho)
+function cardData(track, member) {
+  return {
+    title: track.title,
+    artists: track.artists,
+    coverUrl: track.coverUrl,
+    positionMs: getPosition(track),
+    durationMs: track.durationMs,
+    userName: member?.user?.username ?? "alguém", // nameTag (sem caracteres que a fonte não desenha)
+    displayName: member?.displayName ?? member?.user?.username ?? "alguém",
+    avatarUrl: member?.displayAvatarURL({ extension: "png", size: 128 }) ?? null,
+  };
+}
+
+// Começa a baixar as imagens do card em segundo plano (não espera). Chamado assim que a música é conhecida,
+// enquanto o comando ainda confere permissão, espera e configuração.
+function prefetchCard(track, member, cfg) {
+  prefetchCardImages(cardData(track, member), cfg);
+}
+
 // Monta o card (imagem + botões) de uma música. Usado pelo comando, pelo botão Atualizar e pela
 // pré-visualização do painel. cfg = configuração do n!menu (se não vier, é carregada do servidor).
 async function buildCardPayload({ track, member, userId, cfg, preview = false }) {
   cfg ??= await getSpotifyConfig(member.guild.id);
   const buffer = await renderSpotifyCard(
-    {
-      title: track.title,
-      artists: track.artists,
-      coverUrl: track.coverUrl,
-      positionMs: getPosition(track),
-      durationMs: track.durationMs,
-      userName: member?.user?.username ?? "alguém", // nameTag (sem caracteres que a fonte não desenha)
-      displayName: member?.displayName ?? member?.user?.username ?? "alguém",
-      avatarUrl: member?.displayAvatarURL({ extension: "png", size: 128 }) ?? null,
-    },
+    cardData(track, member),
     cfg // cores, formato, textos e ícones do painel (a renderização lê só o que precisa)
   );
   const fileName = `spotify-${Date.now()}.png`;
@@ -60,8 +71,11 @@ async function handleSpotifyButton(interaction) {
       });
     }
 
-    const member = await interaction.guild.members.fetch(userId).catch(() => null);
-    const cfg = await getSpotifyConfig(interaction.guild.id);
+    const [member, cfg] = await Promise.all([
+      interaction.guild.members.cache.get(userId) ?? interaction.guild.members.fetch(userId).catch(() => null),
+      getSpotifyConfig(interaction.guild.id),
+    ]);
+    if (member) prefetchCard(track, member, cfg);
     const { components, files } = await buildCardPayload({ track, member, userId, cfg });
     rememberCard(interaction.message.id, track);
     // Edita a própria mensagem (a imagem antiga é trocada pela nova)
@@ -108,4 +122,4 @@ async function handleSpotifyButton(interaction) {
   }
 }
 
-module.exports = { handleSpotifyButton, buildCardPayload, rememberCard };
+module.exports = { handleSpotifyButton, buildCardPayload, rememberCard, prefetchCard };
