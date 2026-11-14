@@ -233,6 +233,22 @@ function resolveIconUrl(o = {}) {
   return emojiUrl(SPOTIFY_EMOJI_ID);
 }
 
+// Medidas da pílula (ícone + texto; a largura acompanha o texto)
+function pillMetrics(ctx, o, hasIcon) {
+  const pillText = o.pillText === "-" ? "" : o.pillText || "Spotify";
+  ctx.font = `bold 19px ${BOLD}`;
+  const textW = pillText ? ctx.measureText(pillText).width : 0;
+  const left = hasIcon ? 10 : 20;
+  const pillW = Math.ceil(left + (hasIcon ? 30 : 0) + (hasIcon && pillText ? 8 : 0) + textW + (pillText ? 20 : 10));
+  return { pillText, textW, left, pillW };
+}
+
+// Até onde a pílula pode andar para a direita (de 40px da borda esquerda até 40px da borda direita)
+function pillMaxOffset(o = {}) {
+  const { pillW } = pillMetrics(createCanvas(1, 1).getContext("2d"), o, o.pillIcon !== "-");
+  return Math.max(0, W - 80 - pillW);
+}
+
 // Começa a baixar capa, avatar e ícone antes do desenho (só o que a configuração realmente usa).
 // Não espera nada: o desenho depois reaproveita os downloads em andamento ou já prontos.
 function prefetchCardImages({ coverUrl, avatarUrl } = {}, o = {}) {
@@ -247,7 +263,8 @@ function prefetchCardImages({ coverUrl, avatarUrl } = {}, o = {}) {
 //   cores (#rrggbb): barColor "green" | "cover" | "custom" + barHex, trackHex, knobHex, titleHex, artistHex, timeHex,
 //                    pillTextHex, footerTextHex, bgHex/bgHex2 (fundo no lugar da capa), shadeHex, glassHex
 //   formato: glass "dark" | "normal" | "light", radius, blur, barHeight, overlay (%), showTimes, showKnob,
-//            infoOffset (px que título, artistas, barra e tempos sobem; a faixa "Ouvindo agora" fica no lugar)
+//            infoOffset (px que título, artistas, barra e tempos sobem; a faixa "Ouvindo agora" fica no lugar),
+//            pillOffset (px que a pílula do Spotify anda para a direita)
 //   textos e ícones: showPill, pillText, pillIcon, showNowPlaying, footerText, footerName, showAvatar
 async function renderSpotifyCard(dados, o = {}) {
   const { title, artists, coverUrl, positionMs, durationMs, userName, displayName, avatarUrl } = dados;
@@ -337,22 +354,21 @@ async function renderSpotifyCard(dados, o = {}) {
 
   // Pílula de vidro (ícone + texto; a largura acompanha o texto)
   if (showPill && (pillText || icon || iconMode === "default")) {
-    ctx.font = `bold 19px ${BOLD}`;
-    const textW = pillText ? ctx.measureText(pillText).width : 0;
     const hasIcon = Boolean(icon) || iconMode === "default";
-    const left = hasIcon ? 10 : 20;
-    const pillW = Math.ceil(left + (hasIcon ? 30 : 0) + (hasIcon && pillText ? 8 : 0) + textW + (pillText ? 20 : 10));
+    const { left, pillW } = pillMetrics(ctx, o, hasIcon);
+    // Aba "Posição": a pílula anda para a direita (0 = canto esquerdo de sempre), sem passar da margem direita
+    const pillX = 40 + Math.min(Math.max(0, Math.round(Number(o.pillOffset) || 0)), Math.max(0, W - 80 - pillW));
 
-    glass(ctx, blurred, 40, 34, pillW, 44, 22, preset.tint, preset.dim, glassRgb);
+    glass(ctx, blurred, pillX, 34, pillW, 44, 22, preset.tint, preset.dim, glassRgb);
     if (hasIcon) {
-      if (icon) ctx.drawImage(icon, 40 + left, 41, 30, 30);
-      else spotifyLogo(ctx, 40 + left + 15, 56, 14);
+      if (icon) ctx.drawImage(icon, pillX + left, 41, 30, 30);
+      else spotifyLogo(ctx, pillX + left + 15, 56, 14);
     }
     if (pillText) {
       ctx.fillStyle = o.pillTextHex || "#ffffff";
       ctx.font = `bold 19px ${BOLD}`;
       ctx.textBaseline = "middle";
-      ctx.fillText(pillText, 40 + left + (hasIcon ? 38 : 0), 57);
+      ctx.fillText(pillText, pillX + left + (hasIcon ? 38 : 0), 57);
     }
   }
 
@@ -443,4 +459,4 @@ async function renderSpotifyCard(dados, o = {}) {
   return canvas.encode("png"); // assíncrono: não trava o bot enquanto gera o PNG
 }
 
-module.exports = { renderSpotifyCard, prefetchCardImages, formatTime };
+module.exports = { renderSpotifyCard, prefetchCardImages, pillMaxOffset, formatTime };

@@ -6,6 +6,8 @@ const TTL = 60_000;
 // Aba "Posição": quanto as informações de baixo do card sobem (px), de quanto em quanto e até onde
 const INFO_OFFSET_STEP = 10;
 const INFO_OFFSET_MAX = 200;
+// Pílula do Spotify: de quanto em quanto ela anda para os lados (o limite real depende da largura dela)
+const PILL_OFFSET_STEP = 20;
 const cache = new Map(); // guildId -> { cfg, at }
 
 const DEFAULT_LABELS = {
@@ -107,6 +109,7 @@ function toConfig(doc) {
     showTimes: doc?.showTimes ?? true,
     showKnob: doc?.showKnob ?? true,
     infoOffset: int(doc?.infoOffset, 0, 0, INFO_OFFSET_MAX),
+    pillOffset: int(doc?.pillOffset, 0, 0, 1100),
 
     pillText: short(doc?.pillText, 20),
     pillIcon: normalizeIcon(doc?.pillIcon) ?? "",
@@ -204,6 +207,7 @@ const startCooldown = (guildId, userId) => {
 module.exports = {
   INFO_OFFSET_STEP,
   INFO_OFFSET_MAX,
+  PILL_OFFSET_STEP,
   DEFAULT_LABELS,
   DEFAULT_INFO_LABELS,
   normalizeHex,

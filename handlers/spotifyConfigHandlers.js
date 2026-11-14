@@ -6,12 +6,14 @@ const {
   resetSpotifyConfig,
   INFO_OFFSET_STEP,
   INFO_OFFSET_MAX,
+  PILL_OFFSET_STEP,
   normalizeHex,
   normalizeIcon,
   normalizeEmoji,
 } = require("../utils/spotify/store");
 const { VISUAL_DEFAULTS, COLOR_FIELDS, SHAPE_FIELDS, THEMES } = require("../utils/spotify/themes");
 const { sampleCoverUrl } = require("../utils/spotify/sample");
+const { pillMaxOffset } = require("../utils/spotify/card");
 const { getSpotify } = require("../utils/spotify/activity");
 const {
   buildSpotifyHome,
@@ -187,8 +189,18 @@ async function handleSpotifyConfigButton(interaction) {
       return show("position", await updateSpotifyConfig(guild.id, { infoOffset }));
     }
 
+    // Aba Posição: pílula do Spotify para a direita / esquerda
+    case "sptcfg_pill": {
+      const max = pillMaxOffset(cfg);
+      const current = Math.min(cfg.pillOffset ?? 0, max);
+      const pillOffset =
+        arg === "right" ? Math.min(max, current + PILL_OFFSET_STEP) : arg === "left" ? Math.max(0, current - PILL_OFFSET_STEP) : current;
+      if (pillOffset === cfg.pillOffset) return show("position", cfg);
+      return show("position", await updateSpotifyConfig(guild.id, { pillOffset }));
+    }
+
     case "sptcfg_resetpos":
-      return show("position", await updateSpotifyConfig(guild.id, { infoOffset: 0 }));
+      return show("position", await updateSpotifyConfig(guild.id, { infoOffset: 0, pillOffset: 0 }));
 
     case "sptcfg_resettexts":
       return show(

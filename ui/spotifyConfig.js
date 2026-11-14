@@ -15,7 +15,8 @@ const {
 const { addBackButton } = require("./backButton");
 const { textLabel, modal } = require("./modalHelpers");
 const { vagalumeAvailable } = require("../utils/spotify/lyrics");
-const { DEFAULT_LABELS, DEFAULT_INFO_LABELS, INFO_OFFSET_STEP, INFO_OFFSET_MAX } = require("../utils/spotify/store");
+const { DEFAULT_LABELS, DEFAULT_INFO_LABELS, INFO_OFFSET_STEP, INFO_OFFSET_MAX, PILL_OFFSET_STEP } = require("../utils/spotify/store");
+const { pillMaxOffset } = require("../utils/spotify/card");
 const { THEMES, visualCustomCount } = require("../utils/spotify/themes");
 
 // Painéis do menu: Comunidade e interação → Comando spotify
@@ -300,43 +301,63 @@ function buildSpotifyShape(cfg) {
 
 // ---------- Posição ----------
 
-// Emojis dos botões de posição (cima e baixo)
+// Emojis dos botões de posição (cima, baixo, direita e esquerda)
 const UP_EMOJI = { id: "1571236307336695930", name: "up" };
 const DOWN_EMOJI = { id: "1571236292392648874", name: "down" };
+const RIGHT_EMOJI = { id: "1571255696383672402", name: "right" };
+const LEFT_EMOJI = { id: "1571255882505916577", name: "left" };
 
 function buildSpotifyPosition(cfg) {
   const offset = cfg.infoOffset ?? 0;
+  const pillMax = pillMaxOffset(cfg);
+  const pillOffset = Math.min(cfg.pillOffset ?? 0, pillMax);
+
   const header = new ContainerBuilder().addTextDisplayComponents(
-    text("### Posição das informações"),
-    text("-# Sobe ou desce o título, os artistas, a barra de progresso e os tempos no card. A faixa \"Ouvindo agora\" não muda de lugar."),
+    text("### Posição no card"),
     text(
-      `-# Posição atual: ${offset ? `**${offset}px** acima do padrão (máximo: ${INFO_OFFSET_MAX}px)` : "**padrão** (embaixo)"}`
+      "-# Sobe ou desce o título, os artistas, a barra de progresso e os tempos, e move a pílula do Spotify para os lados. A faixa \"Ouvindo agora\" não muda de lugar."
+    ),
+    text(
+      `-# Informações: ${offset ? `**${offset}px** acima do padrão (máximo: ${INFO_OFFSET_MAX}px)` : "**padrão** (embaixo)"}\n` +
+        `-# Pílula: ${pillOffset ? `**${pillOffset}px** para a direita (máximo: ${pillMax}px)` : "**padrão** (canto esquerdo)"}` +
+        (cfg.showPill === false ? "\n-# A pílula está desativada em Textos e ícones." : "")
     )
   );
 
-  const upButton = new ButtonBuilder()
-    .setCustomId("sptcfg_pos:up")
-    .setEmoji(UP_EMOJI)
-    .setStyle(ButtonStyle.Secondary)
-    .setDisabled(offset >= INFO_OFFSET_MAX);
-  const downButton = new ButtonBuilder()
-    .setCustomId("sptcfg_pos:down")
-    .setEmoji(DOWN_EMOJI)
-    .setStyle(ButtonStyle.Secondary)
-    .setDisabled(offset <= 0);
+  const posButton = (customId, emoji, disabled) =>
+    new ButtonBuilder().setCustomId(customId).setEmoji(emoji).setStyle(ButtonStyle.Secondary).setDisabled(disabled);
 
-  // Texto à esquerda e botão à direita, um separador entre as duas linhas
+  // Texto à esquerda e botão à direita, um separador entre as linhas
+  const line = (title, hint, button) =>
+    new SectionBuilder().addTextDisplayComponents(text(title), text(hint)).setButtonAccessory(button);
+
   const container = new ContainerBuilder()
     .addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(text("**Subir informações**"), text(`-# Sobe ${INFO_OFFSET_STEP}px a cada clique.`))
-        .setButtonAccessory(upButton)
+      line("**Subir informações**", `-# Sobe ${INFO_OFFSET_STEP}px a cada clique.`, posButton("sptcfg_pos:up", UP_EMOJI, offset >= INFO_OFFSET_MAX))
     )
     .addSeparatorComponents(new SeparatorBuilder())
     .addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(text("**Descer informações**"), text(`-# Desce ${INFO_OFFSET_STEP}px a cada clique, até a posição padrão.`))
-        .setButtonAccessory(downButton)
+      line(
+        "**Descer informações**",
+        `-# Desce ${INFO_OFFSET_STEP}px a cada clique, até a posição padrão.`,
+        posButton("sptcfg_pos:down", DOWN_EMOJI, offset <= 0)
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addSectionComponents(
+      line(
+        "**Pílula para a direita**",
+        `-# Move ${PILL_OFFSET_STEP}px a cada clique, até a margem direita.`,
+        posButton("sptcfg_pill:right", RIGHT_EMOJI, pillOffset >= pillMax)
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addSectionComponents(
+      line(
+        "**Pílula para a esquerda**",
+        `-# Move ${PILL_OFFSET_STEP}px a cada clique, até o canto esquerdo.`,
+        posButton("sptcfg_pill:left", LEFT_EMOJI, pillOffset <= 0)
+      )
     )
     .addSeparatorComponents(new SeparatorBuilder())
     .addActionRowComponents(
